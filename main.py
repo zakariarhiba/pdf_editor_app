@@ -13,6 +13,7 @@ from reportlab.lib.pagesizes import letter
 
 import os
 
+
 def create_pdf(full_name,cne,cin,filiere,numero_inscrit):
     # file name 
     outfile_name = full_name.split(' ')
@@ -32,15 +33,23 @@ def create_pdf(full_name,cne,cin,filiere,numero_inscrit):
 
     packet.seek(0)
     new_pdf = PdfFileReader(packet)
-
-    existing_pdf = PdfFileReader(open("pdf_in.pdf", "rb"))
+    THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+    my_file = os.path.join(THIS_FOLDER, "pdf_in.pdf")
+    existing_pdf = PdfFileReader(open(my_file, "rb"))
     output = PdfFileWriter()
     # merge pdf
     page = existing_pdf.getPage(0)
     page.mergePage(new_pdf.getPage(0))
     output.addPage(page)
+    cwd = os.getcwd()
+    dir = os.path.join(THIS_FOLDER,"InscriptionFiles")
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+        print("Create Directory successfully")
+    else:
+        print("Directory already exists")
     # output pdf to the inscrption folder
-    path = "inscriptions_pdfs\\" + outfile_name + ".pdf"
+    path = THIS_FOLDER + "/InscriptionFiles/" + outfile_name + ".pdf"
     outputStream = open(path, "wb")
     output.write(outputStream)
     outputStream.close()
@@ -48,20 +57,25 @@ def create_pdf(full_name,cne,cin,filiere,numero_inscrit):
 
 filiere = ['GE', 'RT', 'GP', 'AGB', 'GIM', 'GI', 'ID', 'GTE', 'TM', 'GRH', 'TGC', 'GLT', 'SE', 'LOG', 'MEEB', 'PI', 'QA', 'TIC', 'TEREE', 'ABD', 'ASR', 'EEI', 'EII', 'GL', 'LOG IND', 'LOG INT', 'PIM', 'PIP', 'MI', 'TCC', 'TVFC', 'STID', 'VPM', 'LP-MI', 'MPII', 'PP', 'GMP']
 
+
+FORM_CLASS,_ = uic.loadUiType(os.path.join(os.path.dirname(__file__),'main.ui'))
 #_Welcom_page_########################################################################
-class MainApp(QWidget):
-    def __init__(self):
-        super().__init__()
-        uic.loadUi('main.ui',self)
-        self.setupUi()
+class MainApp(QWidget, FORM_CLASS):
+    def __init__(self, parent=None):
+        super(MainApp,self).__init__(parent)
+        QWidget.__init__(self)
+        self.setupUi(self)
+        self.setupUi_s()
         self.triggedButtons()
 
-    def setupUi(self):
+    def setupUi_s(self):
+        QApplication.processEvents()
         self.setWindowTitle('   APP for creating Pdf inscription file')
-        self.setGeometry(450, 250, 472, 472)
+        self.setGeometry(450, 250, 487, 472)
         self.setFixedSize(487,472)
         self.setWindowIcon(QtGui.QIcon('icon.png'))
         self.comboBox_filiere.addItems(filiere)
+        QApplication.processEvents()
     
     def triggedButtons(self):
         self.pushButton_submit.clicked.connect(self.submit)
@@ -126,7 +140,9 @@ class MainApp(QWidget):
                 print(error)
             else:
                 print("create successfly")
+                QApplication.processEvents()
                 QMessageBox.information(self,"Creat Succefly","create pdf succefly")
+                QApplication.processEvents()
                 self.openpdf(self.full_name)
                 self.reload()
                 QApplication.processEvents()
@@ -151,15 +167,22 @@ class MainApp(QWidget):
     def openpdf(self,full_name):
         outfile_name = full_name.split(' ')
         outfile_name = outfile_name[0] + '_' + outfile_name[1]
-        path = "inscriptions_pdfs\\" + outfile_name + ".pdf"
-        os.system(path)
-        print("opening the pdf...")
+        THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(THIS_FOLDER, f"InscriptionFiles\{outfile_name}.pdf")
+        # path = "Inscription Files\\" + outfile_name + ".pdf"
+        try:
+            os.system(path)
+            print("opening the pdf...")
+        except Exception as er:
+            print("file not open because of : ")
+            print(er)
 
 
 
 def main():
     app = QApplication(sys.argv)
     widget = MainApp()
+    QApplication.processEvents()
     ###########################################################   
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     widget.show()
